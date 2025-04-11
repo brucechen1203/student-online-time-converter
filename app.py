@@ -23,12 +23,19 @@ with st.expander("📖 使用說明 (點擊展開)", expanded=True):
     3. 點擊「轉換」按鈕處理資料
     4. 查看結果並下載 Excel 檔案
     
-    ### 輸入格式
+    ### 支援的輸入格式
+    
+    **格式 1：**
     ```
     王小明 2 小時 30 分鐘
     李小華 1 小時 45 分鐘
     張三 3 小時 15 分鐘
     ```
+    
+    **格式 2：**
+    ```
+    王小明	36	3時2分
+    李小華	34	2時38分
     """)
 
 # 輸入區域
@@ -36,7 +43,7 @@ st.subheader("輸入學生資料")
 data = st.text_area(
     "請輸入學生姓名和上線時間：",
     height=150,
-    placeholder="例如：王小明 2 小時 30 分鐘"
+    placeholder="例如：\n王小明 2 小時 30 分鐘\n李小華	34	2時38分"
 )
 
 # 處理按鈕
@@ -44,26 +51,44 @@ if st.button("轉換", type="primary", use_container_width=True):
     if not data.strip():
         st.error("❌ 請輸入資料！")
     else:
-        # 使用正則表達式提取學生姓名和上線時間
-        student_pattern = r'(\S+)\s+(\d+)\s*小時\s+(\d+)\s*分鐘'
-        matches = re.findall(student_pattern, data)
+        # 使用正則表達式提取學生姓名和上線時間 (兩種格式)
+        student_pattern1 = r'(\S+)\s+(\d+)\s*小時\s+(\d+)\s*分鐘'
+        student_pattern2 = r'(\S+)\s+\d+\s+(\d+)時(\d+)分'
         
-        if not matches:
+        matches1 = re.findall(student_pattern1, data)
+        matches2 = re.findall(student_pattern2, data)
+        
+        students = []
+        
+        # 處理格式1的資料
+        for match in matches1:
+            name = match[0]
+            hours = int(match[1])
+            minutes = int(match[2])
+            total_seconds = hours * 3600 + minutes * 60
+            students.append({
+                "姓名": name,
+                "小時": hours,
+                "分鐘": minutes,
+                "總秒數": total_seconds
+            })
+        
+        # 處理格式2的資料
+        for match in matches2:
+            name = match[0]
+            hours = int(match[1])
+            minutes = int(match[2])
+            total_seconds = hours * 3600 + minutes * 60
+            students.append({
+                "姓名": name,
+                "小時": hours,
+                "分鐘": minutes,
+                "總秒數": total_seconds
+            })
+        
+        if not students:
             st.error("❌ 未找到符合格式的資料！請確認格式是否正確。")
         else:
-            students = []
-            for match in matches:
-                name = match[0]
-                hours = int(match[1])
-                minutes = int(match[2])
-                total_seconds = hours * 3600 + minutes * 60
-                students.append({
-                    "姓名": name, 
-                    "小時": hours, 
-                    "分鐘": minutes, 
-                    "總秒數": total_seconds
-                })
-            
             # 建立 DataFrame 顯示結果
             df = pd.DataFrame(students)
             
